@@ -19,6 +19,12 @@ var routes = () => {
             }
         });
     });
+
+    bookRouter.use(function(req, res, next) {
+        res.header("Access-Control-Allow-Origin", "*"); // need to control what site can grab this info
+        res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+        next();
+    });
     
     bookRouter.route('/')
         .post((req, res) => {
