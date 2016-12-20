@@ -4,8 +4,6 @@ import bodyParser from 'body-parser';
 
 const bookRouter = express.Router();
 
-console.log("BOOK!!!!!", Book);
-
 var routes = () => {
     bookRouter.use('/:bookId', (req, res, next) => {
         Book.findById(req.params.bookId, (err, book) => {
@@ -45,16 +43,27 @@ var routes = () => {
                 if (err) {
                     res.status(500).send(err);
                 } else {
-                    res.json(books);
+                    
+                    let returnBooks = [];
+                    books.forEach((element, index, arr) => {
+                        let newBook = element.toJSON();
+                        newBook.links = {};
+                        newBook.links.self = 'http://' + req.headers.host + '/api/books/' + newBook._id;
+                        returnBooks.push(newBook);
+                    });
+                    res.json(returnBooks);
                 }
             });
         });
 
     bookRouter.route('/:bookId')
         .get((req, res) => {
-            Book.findById(req.params.bookId, (err, book) => { 
-                res.json(book)
-            });
+            console.log("req.book!!!!!", req.book);
+            var returnBook = req.book.toJSON();
+            returnBook.links = {};
+            let newLink = 'http://' + req.headers.host + '/api/books/?genre=' + returnBook.genre;
+            returnBook.links.FilterByThisGenre = newLink.replace(' ', '%20');
+            res.json(returnBook);
         })
         .put((req, res) => {            
             req.book.title = req.body.title;

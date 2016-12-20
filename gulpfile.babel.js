@@ -4,15 +4,12 @@ import gulp from 'gulp';
 import nodemon from 'gulp-nodemon';
 import browserSync from 'browser-sync';
 import colors from 'colors';
-//import sass from 'gulp-sass';
-//import autoprefixer from 'gulp-autoprefixer';
 import babel from 'gulp-babel';
 //import concat from 'gulp-concat';
-//import inject from 'gulp-inject';
-//import {stream as wiredep} from 'wiredep';
 //import uglify from 'gulp-uglify';
+import merge from 'merge-stream';
 
-const serverJsFiles = ['index.js', './models/*.js', './routes/*.js'];
+const serverJsFiles = ['./index.js', './models/*.js', './routes/*.js', './passport.js'];
 
 gulp.task('serve', ['nodemon'], () => {});
 
@@ -28,7 +25,7 @@ gulp.task('serve', ['nodemon'], () => {});
 //     });
 // });
 
-gulp.task('nodemon', ['sendServerToDist'], function(cb) {
+gulp.task('nodemon', function(cb) {
     let started = false;   
     const options = {
         script: './dist/index.js',
@@ -36,10 +33,15 @@ gulp.task('nodemon', ['sendServerToDist'], function(cb) {
         env: {       // environment variables
             'PORT': 3030 
         },
-        watch: serverJsFiles        // all the jsFiles you specified above
+        ignore: [
+            'node_modules/',
+            'dist/'
+        ],
+        ext: 'js',       // all the jsFiles you specified above
+        tasks: ['sendServerToDist']
     };
 
-    return nodemon(options)
+    var stream = nodemon(options)
         .on('start', function() {
             if (!started) {
                 cb();
@@ -47,38 +49,35 @@ gulp.task('nodemon', ['sendServerToDist'], function(cb) {
             }
         })
         .on('restart', function() {
-            gulp.src('./index.js')
-                .pipe(babel({
-                    presets: ['es2015']
-                }))
-                .pipe(gulp.dest('./dist'));
-            gulp.src('./routes/*.js')
-                .pipe(babel({
-                    presets: ['es2015']
-                }))
-                .pipe(gulp.dest('./dist/routes'));
-            gulp.src('./models/*.js')
-                .pipe(babel({
-                    presets: ['es2015']
-                }))
-                .pipe(gulp.dest('./dist/models'));
+            console.log("restart()")            
+        })
+        .on('crash', () => {
+            console.error('Application has crashed!/n');
+            stream.emit('restart', 4);
         });
 });
 
 gulp.task('sendServerToDist', () => {
-    gulp.src('./index.js')
+    let indexFile = gulp.src('./index.js')
         .pipe(babel({
             presets: ['es2015']
         }))
         .pipe(gulp.dest('./dist'));
-    gulp.src('./models/*.js')
+    let modelFiles = gulp.src('./models/*.js')
         .pipe(babel({
             presets: ['es2015']
         }))
         .pipe(gulp.dest('./dist/models'));
-    gulp.src('./routes/*.js')
+    let routeFiles = gulp.src('./routes/*.js')
         .pipe(babel({
             presets: ['es2015']
         }))
         .pipe(gulp.dest('./dist/routes'));
+    let passportFile = gulp.src('./passport.js')
+        .pipe(babel({
+            presets: ['es2015']
+        }))
+        .pipe(gulp.dest('./dist/'));
+
+    return merge(indexFile, modelFiles, routeFiles, passportFile);
 });
