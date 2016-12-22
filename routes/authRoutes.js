@@ -34,7 +34,7 @@ let routes = (passport) => {
     // new version
     authRouter.post('/signup', (req, res) => {
         if (!req.body.email || !req.body.password) {
-            res.json({
+            return res.status(403).send({
                 success: false,
                 message: 'Please pass email and password.'
             });
@@ -46,7 +46,7 @@ let routes = (passport) => {
             
             newUser.save(function(err) {
                 if (err) {
-                    res.json({
+                    res.status(403).send({
                         success: false,
                         message: 'Email already exists'
                     });
@@ -56,7 +56,7 @@ let routes = (passport) => {
                         message: 'Successful created user'
                     });
                 }
-            })
+            });
         }
     });
 
@@ -83,7 +83,7 @@ let routes = (passport) => {
                             token: 'JWT ' + token
                         });
                     } else {
-                        res.json({
+                        res.status(403).send({
                             success: false,
                             message: 'Authentication failed.  Wrong password.'
                         });
@@ -97,8 +97,6 @@ let routes = (passport) => {
         passport.authenticate('jwt', {session: false}), 
         function(req, res){
             var token = getToken(req.headers);
-            
-            console.log('token', token);
 
             if (token) {
                 var decoded = jwt.decode(token, "secretMeowKey");
@@ -128,10 +126,10 @@ let routes = (passport) => {
     });
 
     function getToken(headers) {
-        console.log("getToken()())()()()(()()())");
         if (headers && headers.authorization) {
             var parted = headers.authorization.split(' ');
             if (parted.length === 2) {
+                console.log("parted[1]", parted[1]);
                 return parted[1];
             } else {
                 return null;
